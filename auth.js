@@ -1,63 +1,82 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
-const User = require("../models/User");
-
+const admin = require("firebase-admin");
 const router = express.Router();
 
-/* ---------- SIGNUP ---------- */
-router.post("/signup", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+const db = admin.firestore();
 
-    // 1️⃣ Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        message: "There is already an account. Add another account."
-      });
+/* ---------- VERIFY TOKEN MIDDLEWARE ---------- */
+async function verifyToken(req, res, next) {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) return res.status(401).json({ message: "No token provided" });
+        
+        const decoded = await admin.auth().verifyIdToken(token);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ message: "Unauthorized" });
     }
+}
 
-    // 2️⃣ Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+/* ---------- INIT USER (after signup) ---------- */
+router.post("/init-user", verifyToken, async (req, res) => {
+    try {
+        const { uid, email } = req.user;
+        const userRef = db.collection("users").doc(uid);
+        const doc = await userRef.get();
 
-    // 3️⃣ Create user
-    const user = await User.create({
-      email,
-      password: hashedPassword
-    });
-
-    // 4️⃣ Send userId for form redirect
-    res.json({
-      message: "Signup successful",
-      userId: user._id
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Signup failed" });
-  }
+        if (!doc.exists) {
+            await userRef.set({
+                firebaseUid: uid,
+                email: email,
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        res.json({ message: "User initialized in Firestore" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
 /* ---------- PROFILE FORM ---------- */
-router.post("/profile/:id", async (req, res) => {
-  try {
-    const { name, gender, dob, phone, taluka } = req.body;
+router.post("/profile", verifyToken, async (req, res) => {
+    try {
+        const { uid } = req.user;
+        const profileData = req.body;
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { name, gender, dob, phone, taluka },
-      { new: true }
-    );
+        // Save to "users" collection, document name is the UID
+        const userRef = db.collection("users").doc(uid);
+        
+        // .set with { merge: true } updates existing data or creates new if missing
+        await userRef.set(profileData, { merge: true });
 
-    res.json({
-      message: "Patient details saved successfully",
-      patientId: updatedUser.patientId
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error saving patient details" });
-  }
+        res.json({
+            message: "Patient details saved to Firebase successfully"
+        });
+    } catch (error) {
+        console.error("Firestore Error:", error);
+        res.status(500).json({ message: "Failed to save to Firebase" });
+    }
 });
 
 module.exports = router;
+
+/* ---------- GET PROFILE DATA ---------- */
+router.get("/profile-data", verifyToken, async (req, res) => {
+    try {
+        const { uid } = req.user; // Decoded from the token in verifyToken middleware
+        
+        const userRef = db.collection("users").doc(uid);
+        const doc = await userRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ message: "No data found for this user." });
+        }
+
+        // Send the data back as JSON
+        res.json(doc.data());
+    } catch (error) {
+        console.error("Firestore Fetch Error:", error);
+        res.status(500).json({ message: "Server error retrieving data" });
+    }
+});
