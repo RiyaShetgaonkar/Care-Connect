@@ -6,7 +6,7 @@
     body {
       background-color: #FFFDD0; /* Cream background */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #006400; /* Dark green for text */
+      color: #006400;
       margin: 0;
       padding: 0;
       display: flex;
@@ -15,21 +15,21 @@
       height: 100vh;
     }
     .container {
-      background-color: #F0FFF0; /* Very light green background for the form container */
+      background-color: #F0FFF0;
       padding: 40px;
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 100, 0, 0.1); /* Subtle green shadow */
+      box-shadow: 0 4px 8px rgba(0, 100, 0, 0.1);
       width: 100%;
       max-width: 400px;
       text-align: center;
     }
     h2 {
-      color: #228B22; /* Forest green for heading */
+      color: #228B22;
       margin-bottom: 20px;
       font-size: 24px;
     }
     input[type="text"], input[type="date"], select {
-      border: 2px solid #32CD32; /* Lime green border */
+      border: 2px solid #32CD32;
       padding: 12px;
       margin: 10px 0;
       width: 100%;
@@ -40,14 +40,14 @@
     }
     input[type="text"]:focus, input[type="date"]:focus, select:focus {
       outline: none;
-      border-color: #228B22; /* Darker green on focus */
+      border-color: #228B22;
       box-shadow: 0 0 5px rgba(34, 139, 34, 0.5);
     }
     select {
       cursor: pointer;
     }
     button {
-      background-color: #228B22; /* Forest green */
+      background-color: #228B22;
       color: white;
       padding: 12px 20px;
       border: none;
@@ -59,7 +59,7 @@
       transition: background-color 0.3s;
     }
     button:hover {
-      background-color: #006400; /* Darker green on hover */
+      background-color: #006400;
     }
   </style>
 </head>
@@ -108,33 +108,68 @@
 
   </form>
 </div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-<script>
-const params = new URLSearchParams(window.location.search);
-const userId = params.get("id");
-
-document.getElementById("profileForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const body = {
-    name: document.getElementById("name").value,
-    gender: document.getElementById("gender").value,
-    dob: document.getElementById("dob").value,
-    phone: document.getElementById("phone").value,
-    taluka: document.getElementById("location").value
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW6yd_F-Bb5YmXH5gmIRBctDa8gG9leA0",
+    authDomain: "care-connect-d46f0.firebaseapp.com",
+    projectId: "care-connect-d46f0",
+    storageBucket: "care-connect-d46f0.firebasestorage.app",
+    messagingSenderId: "55079005278",
+    appId: "1:55079005278:web:ad57ecb0ebf23f292798cf"
   };
 
-  const res = await fetch(`http://localhost:5000/api/auth/profile/${userId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  document.getElementById("profileForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be signed in!");
+      return;
+    }
+
+    // 1. Get the security token from Firebase
+    const token = await user.getIdToken();
+
+    const profileData = {
+      name: document.getElementById("name").value,
+      gender: document.getElementById("gender").value,
+      dob: document.getElementById("dob").value,
+      phone: document.getElementById("phone").value,
+      taluka: document.getElementById("location").value
+    };
+
+    try {
+      // 2. Send data to your NODE SERVER (/api/auth/profile)
+      const response = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      // 3. Check if response is JSON (prevents the DOCTYPE error)
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const result = await response.json();
+        alert("Success: " + result.message);
+        window.location.href = "dashboard.html"; 
+      } else {
+        throw new Error("Server sent back HTML instead of JSON. Check your API route.");
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+    }
   });
-
-  const data = await res.json();
-  alert(data.message);
-
-  window.location.href = "login.html";
-});
 </script>
 
 </body>
