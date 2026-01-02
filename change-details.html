@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Change My Details</title>
+  <style>
+    body { background-color: #FFFDD0; font-family: 'Segoe UI', sans-serif; color: #006400; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { background-color: #F0FFF0; padding: 40px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 100, 0, 0.1); width: 100%; max-width: 400px; text-align: center; }
+    h2 { color: #228B22; margin-bottom: 20px; font-size: 24px; }
+    label { display: block; text-align: left; margin-top: 10px; font-weight: bold; }
+    input, select { border: 2px solid #32CD32; padding: 12px; margin: 5px 0 15px 0; width: 100%; box-sizing: border-box; border-radius: 5px; font-size: 16px; }
+    
+    /* Style for the locked email field */
+    input[readonly] { background-color: #e9e9e9; cursor: not-allowed; border-color: #ccc; color: #666; }
+    
+    button { background-color: #228B22; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; transition: 0.3s; margin-top: 10px; }
+    button:hover { background-color: #006400; }
+    .back-link { display: block; margin-top: 15px; color: #228B22; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Update Details</h2>
+  <form id="updateForm">
+    <label>Email Address (Cannot be changed)</label>
+    <input type="email" id="email" readonly>
+
+    <label>Full Name</label>
+    <input type="text" id="name" required>
+
+    <label>Gender</label>
+    <select id="gender" required>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label>Date of Birth</label>
+    <input type="date" id="dob" required>
+
+    <label>Phone Number</label>
+    <input type="text" id="phone" required>
+
+    <label>Taluka</label>
+    <select id="location" required>
+      <option value="Pernem">Pernem</option>
+      <option value="Bardez">Bardez</option>
+      <option value="Bicholim">Bicholim</option>
+      <option value="Sattari">Sattari</option>
+      <option value="Tiswadi">Tiswadi</option>
+      <option value="Ponda">Ponda</option>
+      <option value="Mormugao">Mormugao</option>
+      <option value="Salcette">Salcette</option>
+      <option value="Dharbandora">Dharbandora</option>
+      <option value="Sanguem">Sanguem</option>
+      <option value="Quepem">Quepem</option>
+      <option value="Canacona">Canacona</option>
+    </select>
+
+    <button type="submit">Update Details</button>
+  </form>
+  <a href="dashboard.html" class="back-link">Cancel and Go Back</a>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDW6yd_F-Bb5YmXH5gmIRBctDa8gG9leA0",
+    authDomain: "care-connect-d46f0.firebaseapp.com",
+    projectId: "care-connect-d46f0",
+    storageBucket: "care-connect-d46f0.firebasestorage.app",
+    messagingSenderId: "55079005278",
+    appId: "1:55079005278:web:ad57ecb0ebf23f292798cf"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    // Pre-fill the email from Auth immediately
+    document.getElementById("email").value = user.email;
+
+    // Pre-fill the rest from Firestore
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/auth/profile-data", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        document.getElementById("name").value = data.name || "";
+        document.getElementById("gender").value = data.gender || "Male";
+        document.getElementById("dob").value = data.dob || "";
+        document.getElementById("phone").value = data.phone || "";
+        document.getElementById("location").value = data.taluka || "Tiswadi";
+      }
+    } catch (err) { console.error("Error loading data:", err); }
+  });
+
+  document.getElementById("updateForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+
+    // Note: We don't even include the email in this object so the backend never receives it to update
+    const updatedData = {
+      name: document.getElementById("name").value,
+      gender: document.getElementById("gender").value,
+      dob: document.getElementById("dob").value,
+      phone: document.getElementById("phone").value,
+      taluka: document.getElementById("location").value
+    };
+
+    try {
+      const response = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedData)
+      });
+
+      if (response.ok) {
+        alert("Details updated successfully!");
+        window.location.href = "viewdetails.html";
+      } else {
+        alert("Update failed.");
+      }
+    } catch (err) { console.error(err); }
+  });
+</script>
+</body>
+</html>
