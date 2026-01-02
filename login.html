@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <style>
+    body {
+      background-color: #FFFDD0; /* Cream background */
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #006400; /* Dark green for text */
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: #F0FFF0; /* Very light green background for the form container */
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 100, 0, 0.1); /* Subtle green shadow */
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h2 {
+      color: #228B22; /* Forest green for heading */
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    input[type="email"], input[type="password"] {
+      border: 2px solid #32CD32; /* Lime green border */
+      padding: 12px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 5px;
+      background-color: white;
+      font-size: 16px;
+    }
+    input[type="email"]:focus, input[type="password"]:focus {
+      outline: none;
+      border-color: #228B22; /* Darker green on focus */
+      box-shadow: 0 0 5px rgba(34, 139, 34, 0.5);
+    }
+    button {
+      background-color: #228B22; /* Forest green */
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 10px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #006400; /* Darker green on hover */
+    }
+    p {
+      color: #008000; /* Green for paragraph */
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    a {
+      color: #00FF00; /* Lime green for link */
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Login</h2>
+
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required><br><br>
+    <input type="password" id="password" placeholder="Password" required><br><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <p>
+    Don't have an account?
+    <a href="signup.html">Signup</a>
+  </p>
+</div>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("http://localhost:5000/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+    alert("Login successful");
+    window.location.href = "dashboard.html";
+  } else {
+    alert(data.msg);
+  }
+});
+</script>
+
+</body>
+</html>
