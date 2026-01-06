@@ -4,9 +4,9 @@
   <title>User Details Form</title>
   <style>
     body {
-      background-color: #FFFDD0; /* Cream background */
+      background-color: #f0f8ff; /* Alice blue for a light blue background */
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #006400;
+      color: #003366; /* Dark blue for text */
       margin: 0;
       padding: 0;
       display: flex;
@@ -15,21 +15,23 @@
       height: 100vh;
     }
     .container {
-      background-color: #F0FFF0;
+      background-color: #ffffff; /* White background for container */
       padding: 40px;
       border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 100, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 51, 102, 0.15); /* Subtle shadow with blue tint */
       width: 100%;
       max-width: 400px;
       text-align: center;
+      border: 1px solid #e0e0e0; /* Light border for professionalism */
     }
     h2 {
-      color: #228B22;
+      color: #003366; /* Dark blue for heading */
       margin-bottom: 20px;
       font-size: 24px;
+      font-weight: 600;
     }
     input[type="text"], input[type="date"], select {
-      border: 2px solid #32CD32;
+      border: 2px solid #b0c4de; /* Light steel blue border */
       padding: 12px;
       margin: 10px 0;
       width: 100%;
@@ -37,17 +39,18 @@
       border-radius: 5px;
       background-color: white;
       font-size: 16px;
+      transition: border-color 0.3s ease; /* Smooth transition for focus */
     }
     input[type="text"]:focus, input[type="date"]:focus, select:focus {
       outline: none;
-      border-color: #228B22;
-      box-shadow: 0 0 5px rgba(34, 139, 34, 0.5);
+      border-color: #4682b4; /* Steel blue on focus */
+      box-shadow: 0 0 5px rgba(70, 130, 180, 0.5); /* Subtle blue glow */
     }
     select {
       cursor: pointer;
     }
     button {
-      background-color: #228B22;
+      background-color: #4682b4; /* Steel blue for button */
       color: white;
       padding: 12px 20px;
       border: none;
@@ -56,10 +59,21 @@
       font-size: 16px;
       width: 100%;
       margin-top: 10px;
-      transition: background-color 0.3s;
+      font-weight: 500;
+      transition: background-color 0.3s ease; /* Smooth hover transition */
     }
     button:hover {
-      background-color: #006400;
+      background-color: #003366; /* Darker blue on hover */
+    }
+    .back-link {
+      display: block;
+      margin-top: 15px;
+      color: #4682b4; /* Blue link */
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back-link:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -113,12 +127,10 @@
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDW6yd_F-Bb5YmXH5gmIRBctDa8gG9leA0",
-    authDomain: "care-connect-d46f0.firebaseapp.com",
-    projectId: "care-connect-d46f0",
-    storageBucket: "care-connect-d46f0.firebasestorage.app",
-    messagingSenderId: "55079005278",
-    appId: "1:55079005278:web:ad57ecb0ebf23f292798cf"
+    apiKey: "AIzaSyDomNH7V0dxt_trHrUwghmUqd9eoUHxWYo",
+    authDomain: "hospital-system-88ee9.firebaseapp.com",
+    projectId: "hospital-system-88ee9",
+    appId: "1:1052835799972:web:81b5f73457d76b777ad731"
   };
 
   const app = initializeApp(firebaseConfig);
