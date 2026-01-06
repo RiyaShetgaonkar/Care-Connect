@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Doctor - Queue Monitor</title>
+   <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+      <div class="container">
+  <h1>Doctor Panel</h1>
+<select id="clinicSelect">
+  <option value="">Select Clinic</option>
+  <option value="Dermatology">Dermatology</option>
+  <option value="Orthopedics">Orthopedics</option>
+  <option value="Cardiology">Cardiology</option>
+  <option value="ENT">ENT</option>
+</select>
+
+  <h3>Current Patient</h3>
+  <div id="currentPatient">None</div>
+
+  <button id="nextBtn">Call Next Patient</button>
+
+  <h3>Queue</h3>
+  <ul id="queueList"></ul>
+
+  <h3>Estimated Waiting Time for next patient</h3>
+  <div id="eta"></div></div>
+
+<script type="module">
+import { db, AVG_TIME } from "./app.js";
+
+import { 
+  collection,
+  getDocs, 
+  deleteDoc, 
+  doc, 
+  query, 
+  orderBy, 
+  onSnapshot 
+} 
+from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+const list = document.getElementById("queueList");
+const etaBox = document.getElementById("eta");
+const currentBox = document.getElementById("currentPatient");
+const clinicSelect = document.getElementById("clinicSelect");
+const nextBtn = document.getElementById("nextBtn");
+
+let queueRef = null;
+let unsubscribe = null;
+let currentPatient = null;
+
+
+// When clinic is selected
+clinicSelect.onchange = () => {
+
+  if (unsubscribe) unsubscribe();   // stop previous listener
+
+  const clinic = clinicSelect.value;
+
+  if (!clinic) return;
+
+  queueRef = collection(db,"queue",clinic,"patients");
+
+  const q = query(queueRef, orderBy("time","asc"));
+
+  unsubscribe = onSnapshot(q,(snapshot)=>{
+
+    list.innerHTML = "";
+
+    let i = 0;
+
+    snapshot.forEach(d=>{
+      const data = d.data();
+
+      const li = document.createElement("li");
+      li.textContent = `${data.token}. ${data.name}`;
+      list.appendChild(li);
+
+      i++;
+    });
+
+    const waiting = i - (currentPatient ? 1 : 0);
+
+    etaBox.textContent = waiting>0 
+      ? `${waiting * AVG_TIME} minutes`
+      : "No waiting";
+  });
+};
+
+
+// NEXT PATIENT BUTTON
+
+
+  nextBtn.onclick = async ()=>{
+
+  if (!queueRef) return alert("Select a clinic first");
+
+  const q = query(queueRef, orderBy("time","asc"));
+  const snap = await getDocs(q);
+
+  if (snap.empty){
+    alert("Queue empty");
+    currentBox.textContent = "None";
+    return;
+  }
+
+  const first = snap.docs[0];
+
+  currentPatient = first.data();
+  currentBox.textContent = `${currentPatient.token}. ${currentPatient.name}`;
+
+  // DELETE THE DOCUMENT CORRECTLY
+  await deleteDoc(first.ref);
+};
+
+</script>
+
+
+</body>
+</html>

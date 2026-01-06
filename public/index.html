@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Hospital Queue System</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+<div class="container">
+
+  <h1>Hospital Queue System</h1>
+
+  <h3>Take a Token</h3>
+
+  <input id="patientName" placeholder="Enter your name" />
+
+  <select id="clinicSelect">
+    <option value="">Select Clinic</option>
+    <option value="Dermatology">Dermatology</option>
+    <option value="Orthopedics">Orthopedics</option>
+    <option value="Cardiology">Cardiology</option>
+    <option value="ENT">ENT</option>
+  </select>
+
+  <button id="takeTokenBtn">Get Token</button>
+
+  <h3>Your Estimated Waiting Time</h3>
+  <div id="etaBox">Enter your name & take a token</div>
+
+  <h3>Current Queues</h3>
+  <div id="queues"></div>
+
+</div>
+
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs,
+  onSnapshot, 
+  query, 
+  orderBy 
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+
+// 🔥 Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDomNH7V0dxt_trHrUwghmUqd9eoUHxWYo",
+  authDomain: "hospital-system-88ee9.firebaseapp.com",
+  projectId: "hospital-system-88ee9",
+  storageBucket: "hospital-system-88ee9.firebasestorage.app",
+  messagingSenderId: "1052835799972",
+  appId: "1:1052835799972:web:81b5f73457d76b777ad731",
+  measurementId: "G-EHV5DSYJTP"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+// ==========================
+// SETTINGS
+// ==========================
+const AVG_TIME = 10;
+
+let currentUserName = "";
+let currentClinic = "";
+
+
+// ==========================
+// TAKE TOKEN
+// ==========================
+document.getElementById("takeTokenBtn").onclick = async () => {
+
+  currentUserName = document.getElementById("patientName").value.trim();
+  currentClinic = document.getElementById("clinicSelect").value;
+
+  if (!currentUserName) return alert("Enter your name");
+  if (!currentClinic) return alert("Please select a clinic");
+
+  const clinicRef = collection(db, "clinics", currentClinic, "queue");
+
+  const snap = await getDocs(clinicRef);
+  const tokenNumber = snap.size + 1;
+
+  await addDoc(clinicRef, {
+    name: currentUserName,
+    clinic: currentClinic,
+    time: Date.now(),
+    token: tokenNumber
+  });
+
+  alert(`Your Token Number is: ${tokenNumber}\nClinic: ${currentClinic}`);
+
+  document.getElementById("patientName").value = "";
+};
+
+
+
+// ==========================
+// RENDER ALL QUEUES
+// ==========================
+const clinics = ["Dermatology","Orthopedics","Cardiology","ENT"];
+const queuesDiv = document.getElementById("queues");
+queuesDiv.innerHTML = "";
+
+clinics.forEach(clinic => {
+
+  const div = document.createElement("div");
+  div.className = "clinicBox";
+
+  div.innerHTML = `
+    <h4>${clinic}</h4>
+    <ul></ul>
+  `;
+
+  queuesDiv.appendChild(div);
+
+
+  const clinicRef = collection(db, "clinics", clinic, "queue");
+  const q = query(clinicRef, orderBy("time","asc"));
+
+  onSnapshot(q, snapshot => {
+
+    const ul = div.querySelector("ul");
+    ul.innerHTML = "";
+
+    let queue = [];
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      queue.push(data);
+
+      const li = document.createElement("li");
+      li.textContent = `${data.token}. ${data.name}`;
+      ul.appendChild(li);
+    });
+
+    // ETA only for selected patient
+    const etaBox = document.getElementById("etaBox");
+
+    if (clinic === currentClinic) {
+
+      const position = queue.findIndex(p => p.name === currentUserName);
+
+      if (!currentUserName)
+          etaBox.textContent = "Enter your name & take a token";
+
+      else if (position === -1)
+          etaBox.textContent = "Waiting for your token...";
+
+      else if (position === 0)
+          etaBox.textContent = "It's your turn now!";
+
+      else
+          etaBox.textContent = `Approximately ${position * AVG_TIME} minutes`;
+    }
+  });
+});
+</script>
+
+</body>
+</html>
