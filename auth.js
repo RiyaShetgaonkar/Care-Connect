@@ -59,13 +59,10 @@ router.post("/profile", verifyToken, async (req, res) => {
     }
 });
 
-module.exports = router;
-
 /* ---------- GET PROFILE DATA ---------- */
 router.get("/profile-data", verifyToken, async (req, res) => {
     try {
-        const { uid } = req.user; // Decoded from the token in verifyToken middleware
-        
+        const { uid } = req.user;
         const userRef = db.collection("users").doc(uid);
         const doc = await userRef.get();
 
@@ -73,10 +70,11 @@ router.get("/profile-data", verifyToken, async (req, res) => {
             return res.status(404).json({ message: "No data found for this user." });
         }
 
-        // Send the data back as JSON
         res.json(doc.data());
     } catch (error) {
         console.error("Firestore Fetch Error:", error);
         res.status(500).json({ message: "Server error retrieving data" });
     }
 });
+
+module.exports = router;
